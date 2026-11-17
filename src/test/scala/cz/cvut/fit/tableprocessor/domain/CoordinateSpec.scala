@@ -15,6 +15,19 @@ class CoordinateSpec extends AnyFunSuite {
     assert(Coordinate.fromReference(" AA12 ") == Right(Coordinate(26, 11)))
   }
 
+  test("parses spreadsheet column names") {
+    assert(Coordinate.fromColumnName("A") == Right(0))
+    assert(Coordinate.fromColumnName("b") == Right(1))
+    assert(Coordinate.fromColumnName("Z") == Right(25))
+    assert(Coordinate.fromColumnName(" AA ") == Right(26))
+  }
+
+  test("rejects invalid spreadsheet column names") {
+    assert(Coordinate.fromColumnName("").isLeft)
+    assert(Coordinate.fromColumnName("A1").isLeft)
+    assert(Coordinate.fromColumnName("A-").isLeft)
+  }
+
   test("rejects malformed spreadsheet references") {
     assert(Coordinate.fromReference("A0").isLeft)
     assert(Coordinate.fromReference("1A").isLeft)

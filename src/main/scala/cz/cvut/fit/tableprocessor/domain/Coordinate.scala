@@ -22,19 +22,33 @@ object Coordinate {
       val columnPart = reference.take(splitAt)
       val rowPart = reference.drop(splitAt)
 
-      if (!columnPart.forall(character => character >= 'A' && character <= 'Z') ||
-          !rowPart.forall(_.isDigit)) {
+      if (!rowPart.forall(_.isDigit)) {
         Left(s"Invalid cell reference: '$value'")
       } else {
-        val column = columnPart.foldLeft(0) { (current, character) =>
-          current * 26 + (character - 'A' + 1)
-        } - 1
-
-        rowPart.toIntOption match {
-          case Some(rowNumber) if rowNumber > 0 => Right(Coordinate(column, rowNumber - 1))
-          case _ => Left(s"Invalid row number in cell reference: '$value'")
+        fromColumnName(columnPart) match {
+          case Left(_) => Left(s"Invalid cell reference: '$value'")
+          case Right(column) =>
+            rowPart.toIntOption match {
+              case Some(rowNumber) if rowNumber > 0 => Right(Coordinate(column, rowNumber - 1))
+              case _ => Left(s"Invalid row number in cell reference: '$value'")
+            }
         }
       }
+    }
+  }
+
+  // Converts a spreadsheet column name into a zero-based index.
+  def fromColumnName(value: String): Either[String, Int] = {
+    val columnName = value.trim.toUpperCase
+
+    if (columnName.isEmpty || !columnName.forall(character => character >= 'A' && character <= 'Z')) {
+      Left(s"Invalid column name: '$value'")
+    } else {
+      val index = columnName.foldLeft(0) { (current, character) =>
+        current * 26 + (character - 'A' + 1)
+      } - 1
+
+      Right(index)
     }
   }
 
