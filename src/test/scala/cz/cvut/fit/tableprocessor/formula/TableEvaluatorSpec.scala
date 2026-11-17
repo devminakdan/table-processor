@@ -53,6 +53,16 @@ class TableEvaluatorSpec extends AnyFunSuite {
     }
   }
 
+  test("stores negative results produced by formulas") {
+    val input = createTable(Seq(Seq(Cell.Formula("=1-2"))))
+
+    evaluator.evaluate(input) match {
+      case Right(table) =>
+        assert(table.cellAt(Coordinate(0, 0)).contains(Cell.Number(-1)))
+      case Left(error) => fail(s"Expected an evaluated table, but got: $error")
+    }
+  }
+
   test("keeps a direct reference to an empty cell empty") {
     val input = createTable(Seq(Seq(Cell.Empty, Cell.Formula("=A1"))))
 

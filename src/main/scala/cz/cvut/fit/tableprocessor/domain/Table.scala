@@ -1,38 +1,50 @@
 package cz.cvut.fit.tableprocessor.domain
 
 // Immutable rectangular table.
-final case class Table private (rows: Vector[Vector[Cell]]) {
+final case class Table private (rows: Vector[TableRow]) {
   val height: Int = rows.length
-  val width: Int = rows.headOption.fold(0)(_.length)
+  val width: Int = rows.headOption.fold(0)(_.cells.length)
 
   def cellAt(coordinate: Coordinate): Option[Cell] =
-    rows.lift(coordinate.row).flatMap(_.lift(coordinate.column))
+    rows.find(_.originalIndex == coordinate.row).flatMap(_.cells.lift(coordinate.column))
 
   def contains(coordinate: Coordinate): Boolean = cellAt(coordinate).isDefined
 
   def coordinates: Iterator[Coordinate] =
     for {
-      row <- Iterator.range(0, height)
+      row <- rows.iterator
       column <- Iterator.range(0, width)
-    } yield Coordinate(column, row)
+    } yield Coordinate(column, row.originalIndex)
 
   def mapCells(transform: (Coordinate, Cell) => Cell): Table =
-    Table.unsafeFromRows(
-      rows.zipWithIndex.map { case (row, rowIndex) =>
-        row.zipWithIndex.map { case (cell, columnIndex) =>
-          transform(Coordinate(columnIndex, rowIndex), cell)
+    Table.unsafeFromTableRows(
+      rows.map { row =>
+        val transformedCells = row.cells.zipWithIndex.map { case (cell, columnIndex) =>
+          transform(Coordinate(columnIndex, row.originalIndex), cell)
         }
+
+        row.copy(cells = transformedCells)
       }
     )
 }
 
 object Table {
   def fromRows(rows: Seq[Seq[Cell]]): Either[String, Table] = {
-    val normalizedRows = rows.map(_.toVector).toVector
-    val expectedWidth = normalizedRows.headOption.fold(0)(_.length)
+    val tableRows = rows.zipWithIndex.map { case (cells, index) =>
+      TableRow(index, cells.toVector)
+    }
 
-    if (normalizedRows.exists(_.length != expectedWidth)) {
+    fromTableRows(tableRows)
+  }
+
+  def fromTableRows(rows: Seq[TableRow]): Either[String, Table] = {
+    val normalizedRows = rows.toVector
+    val expectedWidth = normalizedRows.headOption.fold(0)(_.cells.length)
+
+    if (normalizedRows.exists(_.cells.length != expectedWidth)) {
       Left("A table must be rectangular: every row must have the same number of cells")
+    } else if (normalizedRows.map(_.originalIndex).distinct.length != normalizedRows.length) {
+      Left("A table cannot contain duplicate original row indexes")
     } else {
       Right(new Table(normalizedRows))
     }
@@ -40,6 +52,6 @@ object Table {
 
   def empty: Table = new Table(Vector.empty)
 
-  private[domain] def unsafeFromRows(rows: Vector[Vector[Cell]]): Table =
+  private[domain] def unsafeFromTableRows(rows: Vector[TableRow]): Table =
     new Table(rows)
 }
