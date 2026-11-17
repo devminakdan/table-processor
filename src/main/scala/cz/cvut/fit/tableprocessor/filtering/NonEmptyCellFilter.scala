@@ -1,6 +1,7 @@
 package cz.cvut.fit.tableprocessor.filtering
 
 import cz.cvut.fit.tableprocessor.domain.Cell
+import cz.cvut.fit.tableprocessor.domain.Coordinate
 import cz.cvut.fit.tableprocessor.domain.Table
 import cz.cvut.fit.tableprocessor.domain.TableRow
 import scala.collection.mutable.ArrayBuffer
@@ -27,6 +28,21 @@ final class NonEmptyCellFilter(column: Int) extends TableFilter {
     Table.fromTableRows(acceptedRows.toVector) match {
       case Right(filteredTable) => filteredTable
       case Left(error) => throw new IllegalStateException(error)
+    }
+  }
+}
+
+object NonEmptyCellFilter extends FilterCommandParser {
+  override val flag: String = "--filter-non-empty"
+
+  // Parses: <column>.
+  override def parse(args: Vector[String]): Either[String, ParseResult] = {
+    if (args.isEmpty) {
+      Left("--filter-non-empty requires a column")
+    } else {
+      Coordinate.fromColumnName(args(0)).map { column =>
+        ParseResult(new NonEmptyCellFilter(column), consumedArgs = 1)
+      }
     }
   }
 }
