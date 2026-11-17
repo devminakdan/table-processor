@@ -11,7 +11,7 @@ class TableSpec extends AnyFunSuite {
 
     assert(table.width == 2)
     assert(table.height == 2)
-    assert(table.cellAt(Coordinate(0, 1)) == Some(Cell.Formula("=A1")))
+    assert(table.cellAt(Coordinate(0, 1)).contains(Cell.Formula("=A1")))
     assert(table.cellAt(Coordinate(2, 0)).isEmpty)
   }
 
@@ -28,7 +28,7 @@ class TableSpec extends AnyFunSuite {
     val original = Table.fromRows(Seq(Seq(Cell.Number(1)))).toOption.get
     val changed = original.mapCells((_, _) => Cell.Number(2))
 
-    assert(original.cellAt(Coordinate(0, 0)) == Some(Cell.Number(1)))
-    assert(changed.cellAt(Coordinate(0, 0)) == Some(Cell.Number(2)))
+    assert(original.cellAt(Coordinate(0, 0)).contains(Cell.Number(1)))
+    assert(changed.cellAt(Coordinate(0, 0)).contains(Cell.Number(2)))
   }
 }
